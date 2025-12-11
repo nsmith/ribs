@@ -2,15 +2,40 @@
  * GiftList component displays a list of gift recommendations.
  */
 
+import { useState } from 'react';
 import { GiftRecommendation, QueryContext } from '../types';
 import { GiftCard } from './GiftCard';
 
 interface GiftListProps {
   gifts: GiftRecommendation[];
   queryContext: QueryContext;
+  recipientDescription?: string;
 }
 
-export function GiftList({ gifts, queryContext }: GiftListProps) {
+export function GiftList({ gifts, queryContext, recipientDescription }: GiftListProps) {
+  const [starredIds, setStarredIds] = useState<Set<string>>(new Set());
+
+  const handleStar = (giftId: string) => {
+    setStarredIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(giftId)) {
+        next.delete(giftId);
+      } else {
+        next.add(giftId);
+      }
+      return next;
+    });
+  };
+
+  const handleRefine = () => {
+    if (starredIds.size > 0 && recipientDescription && window.openai?.callTool) {
+      window.openai.callTool('get_recommendations', {
+        recipient_description: recipientDescription,
+        starred_gift_ids: Array.from(starredIds),
+      });
+    }
+  };
+
   if (gifts.length === 0) {
     return (
       <div className="gift-list-empty">
@@ -22,7 +47,11 @@ export function GiftList({ gifts, queryContext }: GiftListProps) {
   return (
     <div className="gift-list">
       <div className="gift-list-context">
-        {queryContext.fallback_used ? (
+        {queryContext.starred_boost_applied ? (
+          <p className="gift-list-refined">
+            Results refined based on your starred selections.
+          </p>
+        ) : queryContext.fallback_used ? (
           <p className="gift-list-fallback">
             Showing popular gift suggestions based on general trends.
           </p>
@@ -35,9 +64,27 @@ export function GiftList({ gifts, queryContext }: GiftListProps) {
 
       <div className="gift-list-items">
         {gifts.map((gift) => (
-          <GiftCard key={gift.id} gift={gift} />
+          <GiftCard
+            key={gift.id}
+            gift={gift}
+            onStar={handleStar}
+            isStarred={starredIds.has(gift.id)}
+          />
         ))}
       </div>
+
+      {starredIds.size > 0 && (
+        <div className="gift-list-actions">
+          <button
+            type="button"
+            className="gift-list-refine-button"
+            onClick={handleRefine}
+            aria-label={`Refine recommendations based on ${starredIds.size} starred gift${starredIds.size > 1 ? 's' : ''}`}
+          >
+            Refine Recommendations ({starredIds.size})
+          </button>
+        </div>
+      )}
     </div>
   );
 }
