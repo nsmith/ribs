@@ -9,6 +9,7 @@ from src.domain.entities.recommendation_response import (
 )
 from src.domain.ports.embedding_provider import EmbeddingProviderPort
 from src.domain.ports.vector_store import VectorStorePort
+from src.domain.services.embedding_service import EmbeddingService
 
 
 class RecommendationService:
@@ -27,6 +28,7 @@ class RecommendationService:
         """
         self._embedding_provider = embedding_provider
         self._vector_store = vector_store
+        self._embedding_service = EmbeddingService(provider=embedding_provider)
 
     async def get_recommendations(
         self,
@@ -45,11 +47,38 @@ class RecommendationService:
             request.recipient_description
         )
 
+        # Handle starred gift embedding blending
+        starred_boost_applied = False
+        starred_gift_ids: set[str] = set()
+
+        if request.starred_gift_ids:
+            starred_gifts = await self._vector_store.get_by_ids(request.starred_gift_ids)
+
+            if starred_gifts:
+                starred_boost_applied = True
+                starred_gift_ids = {str(g.id) for g in starred_gifts}
+
+                # Collect embeddings: query + starred gift embeddings
+                starred_embeddings = [g.embedding for g in starred_gifts if g.embedding]
+
+                if starred_embeddings:
+                    # Blend query embedding with starred gift embeddings
+                    # Weight: 50% query, 50% starred (split evenly among starred)
+                    all_embeddings = [query_embedding] + starred_embeddings
+                    num_starred = len(starred_embeddings)
+                    weights = [0.5] + [0.5 / num_starred] * num_starred
+                    query_embedding = self._embedding_service.blend_embeddings(
+                        all_embeddings, weights=weights
+                    )
+
         # Search for similar gifts
         limit = request.limit or 10
+        # Request extra results to account for filtering out starred gifts
+        search_limit = limit + len(starred_gift_ids)
+
         search_results = await self._vector_store.search_similar(
             embedding=query_embedding,
-            limit=limit,
+            limit=search_limit,
             threshold=0.5,
         )
 
@@ -60,12 +89,19 @@ class RecommendationService:
         # If no results above threshold, fall back to popular gifts
         if not search_results:
             fallback_used = True
-            search_results = await self._vector_store.get_popular(limit=limit)
+            search_results = await self._vector_store.get_popular(limit=search_limit)
+
+        # Filter out starred gifts from results
+        filtered_results = [
+            (gift, score)
+            for gift, score in search_results
+            if str(gift.id) not in starred_gift_ids
+        ]
 
         # Convert results to recommendations
         gifts = [
             self._gift_to_recommendation(gift, score)
-            for gift, score in search_results
+            for gift, score in filtered_results
         ]
 
         # Sort by relevance score descending
@@ -77,7 +113,7 @@ class RecommendationService:
         query_context = QueryContext(
             total_searched=total_searched,
             above_threshold=len([g for g in gifts if g.relevance_score >= 0.5]),
-            starred_boost_applied=bool(request.starred_gift_ids),
+            starred_boost_applied=starred_boost_applied,
             fallback_used=fallback_used,
         )
 

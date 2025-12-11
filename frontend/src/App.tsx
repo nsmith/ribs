@@ -5,6 +5,8 @@
  */
 
 import { useOpenAi } from './hooks/useOpenAi';
+import { GiftList } from './components/GiftList';
+import { GiftRecommendation, QueryContext } from './types';
 
 function App() {
   const { toolOutput, isReady, theme } = useOpenAi();
@@ -28,7 +30,7 @@ function App() {
   }
 
   // Handle error state
-  if (toolOutput.structuredContent.error) {
+  if (toolOutput.structuredContent?.error) {
     return (
       <div className={`app ${theme}`}>
         <p className="error">{toolOutput.content}</p>
@@ -36,11 +38,19 @@ function App() {
     );
   }
 
-  // Render gift list (placeholder - will be implemented in US1)
+  // Extract data from tool output
+  const gifts: GiftRecommendation[] = toolOutput.structuredContent?.gifts || [];
+  const queryContext: QueryContext = toolOutput.structuredContent?.query_context || {
+    total_searched: 0,
+    above_threshold: 0,
+    starred_boost_applied: false,
+    fallback_used: false,
+  };
+
+  // Render gift list
   return (
     <div className={`app ${theme}`}>
-      <p>Gift recommendations loaded: {toolOutput.structuredContent.gifts.length} items</p>
-      {/* GiftList component will be added in User Story 1 */}
+      <GiftList gifts={gifts} queryContext={queryContext} />
     </div>
   );
 }

@@ -8,6 +8,7 @@ from src.adapters.mcp.server import create_mcp_server
 from src.adapters.vectors.s3_vectors_adapter import S3VectorsAdapter
 from src.config.logging import configure_logging
 from src.config.settings import get_settings
+from src.domain.services.recommendation_service import RecommendationService
 
 logger = structlog.get_logger()
 
@@ -31,14 +32,18 @@ def main() -> None:
         region=settings.aws_region,
     )
 
-    # Create MCP server
-    mcp = create_mcp_server(settings)
-    mcp_module.mcp_server = mcp
+    # Create domain services
+    recommendation_service = RecommendationService(
+        embedding_provider=embedding_adapter,
+        vector_store=vector_adapter,
+    )
 
-    # Store adapters in server context for tool handlers
-    mcp.state["embedding_adapter"] = embedding_adapter
-    mcp.state["vector_adapter"] = vector_adapter
-    mcp.state["settings"] = settings
+    # Create MCP server with service
+    mcp = create_mcp_server(
+        settings=settings,
+        recommendation_service=recommendation_service,
+    )
+    mcp_module.mcp_server = mcp
 
     log.info("server_configured", adapters=["openai_embedding", "s3_vectors"])
 
