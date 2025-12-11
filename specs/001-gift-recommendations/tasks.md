@@ -25,14 +25,14 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Create backend project structure per plan.md in backend/
-- [ ] T002 Initialize Python project with pyproject.toml including fastmcp, openai, boto3, pydantic, pytest dependencies
-- [ ] T003 [P] Create frontend project structure per plan.md in frontend/
-- [ ] T004 [P] Initialize React/TypeScript project with package.json in frontend/
-- [ ] T005 [P] Configure pytest and pytest-asyncio in backend/pyproject.toml
-- [ ] T006 [P] Configure ESLint and TypeScript in frontend/
-- [ ] T007 Create backend/.env.example with required environment variables (OPENAI_API_KEY, AWS_REGION, S3_VECTORS_BUCKET)
-- [ ] T008 [P] Create backend/src/config/settings.py with pydantic Settings class for environment configuration
+- [x] T001 Create backend project structure per plan.md in backend/
+- [x] T002 Initialize Python project with pyproject.toml including fastmcp, openai, boto3, pydantic, pytest dependencies
+- [x] T003 [P] Create frontend project structure per plan.md in frontend/
+- [x] T004 [P] Initialize React/TypeScript project with package.json in frontend/
+- [x] T005 [P] Configure pytest and pytest-asyncio in backend/pyproject.toml
+- [x] T006 [P] Configure ESLint and TypeScript in frontend/
+- [x] T007 Create backend/.env.example with required environment variables (OPENAI_API_KEY, AWS_REGION, S3_VECTORS_BUCKET)
+- [x] T008 [P] Create backend/src/config/settings.py with pydantic Settings class for environment configuration
 
 ---
 
@@ -42,21 +42,21 @@
 
 **CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T009 Create port interface VectorStorePort in backend/src/domain/ports/vector_store.py
-- [ ] T010 [P] Create port interface EmbeddingProviderPort in backend/src/domain/ports/embedding_provider.py
-- [ ] T011 Create Gift entity in backend/src/domain/entities/gift.py per data-model.md
-- [ ] T012 [P] Create PriceRange enum in backend/src/domain/entities/price_range.py
-- [ ] T013 [P] Create RecommendationRequest entity in backend/src/domain/entities/recommendation_request.py
-- [ ] T014 [P] Create RecommendationResponse and GiftRecommendation entities in backend/src/domain/entities/recommendation_response.py
-- [ ] T015 [P] Create QueryContext entity in backend/src/domain/entities/query_context.py
-- [ ] T016 Create OpenAI embedding adapter implementing EmbeddingProviderPort in backend/src/adapters/embeddings/openai_adapter.py
-- [ ] T017 Create S3 Vectors adapter implementing VectorStorePort in backend/src/adapters/vectors/s3_vectors_adapter.py
-- [ ] T018 Create FastMCP server setup in backend/src/adapters/mcp/server.py
-- [ ] T019 [P] Create structured logging configuration in backend/src/config/logging.py
-- [ ] T020 Create main.py entry point in backend/src/main.py
-- [ ] T021 [P] Create useOpenAi hook for window.openai integration in frontend/src/hooks/useOpenAi.ts
-- [ ] T022 Create App.tsx main widget entry in frontend/src/App.tsx
-- [ ] T023 [P] Create index.html skybridge entry point in frontend/public/index.html with text/html+skybridge MIME type
+- [x] T009 Create port interface VectorStorePort in backend/src/domain/ports/vector_store.py
+- [x] T010 [P] Create port interface EmbeddingProviderPort in backend/src/domain/ports/embedding_provider.py
+- [x] T011 Create Gift entity in backend/src/domain/entities/gift.py per data-model.md
+- [x] T012 [P] Create PriceRange enum in backend/src/domain/entities/price_range.py
+- [x] T013 [P] Create RecommendationRequest entity in backend/src/domain/entities/recommendation_request.py
+- [x] T014 [P] Create RecommendationResponse and GiftRecommendation entities in backend/src/domain/entities/recommendation_response.py
+- [x] T015 [P] Create QueryContext entity in backend/src/domain/entities/query_context.py
+- [x] T016 Create OpenAI embedding adapter implementing EmbeddingProviderPort in backend/src/adapters/embeddings/openai_adapter.py
+- [x] T017 Create S3 Vectors adapter implementing VectorStorePort in backend/src/adapters/vectors/s3_vectors_adapter.py
+- [x] T018 Create FastMCP server setup in backend/src/adapters/mcp/server.py
+- [x] T019 [P] Create structured logging configuration in backend/src/config/logging.py
+- [x] T020 Create main.py entry point in backend/src/main.py
+- [x] T021 [P] Create useOpenAi hook for window.openai integration in frontend/src/hooks/useOpenAi.ts
+- [x] T022 Create App.tsx main widget entry in frontend/src/App.tsx
+- [x] T023 [P] Create index.html skybridge entry point in frontend/public/index.html with text/html+skybridge MIME type
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 
