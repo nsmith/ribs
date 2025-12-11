@@ -21,6 +21,8 @@ class Gift(BaseModel):
         recipient_types: Target recipients (optional)
         embedding: 1536-dimensional vector from text-embedding-3-small
         popularity_score: Fallback ranking metric (0.0-1.0)
+        purchase_url: URL to purchase the gift (optional)
+        has_affiliate_commission: Whether purchase generates affiliate commission
     """
 
     id: UUID
@@ -33,6 +35,8 @@ class Gift(BaseModel):
     recipient_types: list[str] = Field(default_factory=list)
     embedding: list[float] = Field(..., min_length=1536, max_length=1536)
     popularity_score: float = Field(default=0.5, ge=0.0, le=1.0)
+    purchase_url: str | None = Field(default=None, max_length=500)
+    has_affiliate_commission: bool = Field(default=False)
 
     @field_validator("categories")
     @classmethod

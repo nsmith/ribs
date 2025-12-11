@@ -96,5 +96,6 @@ def mock_vector_store(sample_gifts: list[Gift]) -> VectorStorePort:
         return_value=[(gift, 0.5) for gift in sample_gifts]
     )
     mock.get_total_count = AsyncMock(return_value=100)
+    mock.find_by_name = AsyncMock(return_value=None)
     mock.health_check = AsyncMock(return_value={"status": "healthy"})
     return mock

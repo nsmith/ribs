@@ -31,3 +31,16 @@ export interface RecommendationRequest {
   starred_gift_ids?: string[];
   limit?: number;
 }
+
+export interface GiftDetailsData {
+  id: string;
+  name: string;
+  brief_description: string;
+  full_description: string;
+  price_range: PriceRange;
+  categories: string[];
+  occasions: string[];
+  recipient_types: string[];
+  purchase_url: string | null;
+  has_affiliate_commission: boolean;
+}

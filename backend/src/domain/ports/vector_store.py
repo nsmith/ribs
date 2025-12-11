@@ -87,6 +87,18 @@ class VectorStorePort(ABC):
         ...
 
     @abstractmethod
+    async def find_by_name(self, name: str) -> Gift | None:
+        """Find a gift by its exact name.
+
+        Args:
+            name: Gift name to search for
+
+        Returns:
+            Gift if found, None otherwise
+        """
+        ...
+
+    @abstractmethod
     async def health_check(self) -> dict[str, Any]:
         """Check vector store connectivity and status.
 

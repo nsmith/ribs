@@ -33,6 +33,8 @@ dev = [
 
 [project.scripts]
 gift-recommendations = "src.main:main"
+gift-recommendations-dev = "src.dev_server:main"
+upload-gifts = "src.cli.upload_gifts:main"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

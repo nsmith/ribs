@@ -30,6 +30,8 @@ def main() -> None:
         bucket=settings.s3_vectors_bucket,
         index_name=settings.s3_vectors_index,
         region=settings.aws_region,
+        aws_access_key_id=settings.aws_access_key_id,
+        aws_secret_access_key=settings.aws_secret_access_key,
     )
 
     # Create domain services
@@ -42,13 +44,19 @@ def main() -> None:
     mcp = create_mcp_server(
         settings=settings,
         recommendation_service=recommendation_service,
+        vector_store=vector_adapter,
     )
     mcp_module.mcp_server = mcp
 
     log.info("server_configured", adapters=["openai_embedding", "s3_vectors"])
 
-    # Run the server
-    mcp.run()
+    # Check transport mode from settings
+    if settings.mcp_transport == "stdio":
+        log.info("starting_stdio_server")
+        mcp.run()
+    else:
+        log.info("starting_sse_server", host=settings.mcp_host, port=settings.mcp_port)
+        mcp.run(transport="sse", host=settings.mcp_host, port=settings.mcp_port)
 
 
 if __name__ == "__main__":

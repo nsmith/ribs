@@ -127,11 +127,40 @@ clean-frontend: ## Clean frontend artifacts
 # Development
 #------------------------------------------------------------------------------
 
-dev-backend: ## Run backend in development mode
+dev-backend: ## Run backend with real AWS/OpenAI (requires .env)
+	@echo "→ Starting server with real adapters (SSE on port 3001)"
+	@echo "  Requires: backend/.env with OPENAI_API_KEY, AWS credentials"
+	@echo ""
 	@cd backend && uv run python -m src.main
 
 dev-frontend: ## Run frontend dev server
 	@cd frontend && npm run dev
+
+dev-mock: ## Run backend with mock adapters (SSE on port 3001)
+	@echo "→ Starting dev server with SSE transport on http://127.0.0.1:3001/sse"
+	@echo "  Tools: get_recommendations, get_gift_details"
+	@echo "  Sample gift IDs:"
+	@echo "    - 11111111-1111-1111-1111-111111111111 (Leather Journal)"
+	@echo "    - 22222222-2222-2222-2222-222222222222 (Woodworking Kit)"
+	@echo "    - 33333333-3333-3333-3333-333333333333 (Vinyl Record Player)"
+	@echo ""
+	@cd backend && uv run python -m src.dev_server
+
+inspect: ## Open MCP Inspector (run 'make dev-mock' first in another terminal)
+	@echo "→ Opening MCP Inspector..."
+	@echo "  Make sure dev server is running: make dev-mock"
+	@echo "  Connect to: http://127.0.0.1:3001/sse"
+	@echo ""
+	@npx @anthropic/mcp-inspector
+
+upload-gifts: ## Upload gifts from CSV (usage: make upload-gifts CSV=path/to/file.csv)
+	@if [ -z "$(CSV)" ]; then \
+		echo "Usage: make upload-gifts CSV=path/to/file.csv"; \
+		echo "       make upload-gifts CSV=path/to/file.csv SETUP=1  # Create index if needed"; \
+		echo "       make upload-gifts CSV=path/to/file.csv DRY_RUN=1"; \
+		exit 1; \
+	fi
+	@cd backend && uv run upload-gifts $(CSV) $(if $(SETUP),--setup,) $(if $(DRY_RUN),--dry-run,)
 
 #------------------------------------------------------------------------------
 # CI Helpers
