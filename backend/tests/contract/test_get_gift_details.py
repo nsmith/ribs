@@ -38,7 +38,6 @@ class TestGetGiftDetailsResponse:
             occasions=["birthday", "graduation"],
             recipient_types=["writers", "professionals"],
             purchase_url="https://example.com/leather-journal",
-            has_affiliate_commission=True,
         )
 
         assert details.id == "12345678-1234-1234-1234-123456789012"
@@ -50,7 +49,6 @@ class TestGetGiftDetailsResponse:
         assert details.occasions == ["birthday", "graduation"]
         assert details.recipient_types == ["writers", "professionals"]
         assert details.purchase_url == "https://example.com/leather-journal"
-        assert details.has_affiliate_commission is True
 
     def test_response_optional_fields_have_defaults(self) -> None:
         """Optional fields should have sensible defaults."""
@@ -66,7 +64,6 @@ class TestGetGiftDetailsResponse:
         assert details.occasions == []
         assert details.recipient_types == []
         assert details.purchase_url is None
-        assert details.has_affiliate_commission is False
 
     def test_response_structured_content_format(self) -> None:
         """Response should follow MCP structured content format."""
@@ -87,22 +84,6 @@ class TestGetGiftDetailsResponse:
         )
 
         assert details.purchase_url == "https://amazon.com/dp/B0123456"
-
-    def test_gift_details_affiliate_flag(self) -> None:
-        """Gift details must indicate if affiliate commission applies."""
-        details = GiftDetails(
-            id="12345678-1234-1234-1234-123456789012",
-            name="Affiliate Gift",
-            brief_description="A gift",
-            full_description="A gift with affiliate commission.",
-            price_range="premium",
-            categories=["electronics"],
-            purchase_url="https://amazon.com/dp/B0123456",
-            has_affiliate_commission=True,
-        )
-
-        assert details.has_affiliate_commission is True
-
 
 class TestGetGiftDetailsError:
     """Contract tests for error responses."""

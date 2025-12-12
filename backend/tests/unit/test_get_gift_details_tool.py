@@ -55,7 +55,8 @@ class TestGetGiftDetailsTool:
         assert details["name"] == "Leather Journal"
         assert details["full_description"] == sample_gift.full_description
         assert details["purchase_url"] == "https://example.com/leather-journal"
-        assert details["has_affiliate_commission"] is True
+        # has_affiliate_commission is internal only, not exposed in MCP response
+        assert "has_affiliate_commission" not in details
 
     @pytest.mark.asyncio
     async def test_tool_includes_occasions_and_recipient_types(
@@ -164,4 +165,5 @@ class TestGetGiftDetailsTool:
         assert details["occasions"] == []
         assert details["recipient_types"] == []
         assert details["purchase_url"] is None
-        assert details["has_affiliate_commission"] is False
+        # has_affiliate_commission is internal only, not exposed in MCP response
+        assert "has_affiliate_commission" not in details

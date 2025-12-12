@@ -77,7 +77,7 @@ def _build_structured_response(response: Any) -> dict[str, Any]:
         response: The RecommendationResponse from the service.
 
     Returns:
-        MCP-formatted response with structuredContent, content, and _meta.
+        MCP-formatted response with structuredContent and content.
     """
     # Structured content for programmatic access (UI rendering)
     structured_content = {
@@ -92,12 +92,6 @@ def _build_structured_response(response: Any) -> dict[str, Any]:
             }
             for gift in response.gifts
         ],
-        "query_context": {
-            "total_searched": response.query_context.total_searched,
-            "above_threshold": response.query_context.above_threshold,
-            "starred_boost_applied": response.query_context.starred_boost_applied,
-            "fallback_used": response.query_context.fallback_used,
-        },
     }
 
     # Human-readable content for LLM/text display
@@ -110,18 +104,9 @@ def _build_structured_response(response: Any) -> dict[str, Any]:
     else:
         content = "No gift recommendations found matching the description."
 
-    # Metadata for debugging/analytics
-    meta = {
-        "total_searched": response.query_context.total_searched,
-        "above_threshold": response.query_context.above_threshold,
-        "starred_boost_applied": response.query_context.starred_boost_applied,
-        "fallback_used": response.query_context.fallback_used,
-    }
-
     return {
         "structuredContent": structured_content,
         "content": content,
-        "_meta": meta,
     }
 
 
@@ -137,5 +122,4 @@ def _build_error_response(error_message: str) -> dict[str, Any]:
     return {
         "structuredContent": {"error": error_message, "gifts": []},
         "content": f"Error: {error_message}",
-        "_meta": {"error": error_message},
     }

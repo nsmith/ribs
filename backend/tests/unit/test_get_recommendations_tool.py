@@ -56,7 +56,6 @@ class TestGetRecommendationsTool:
         # MCP structured content format
         assert "structuredContent" in result
         assert "content" in result
-        assert "_meta" in result
 
     @pytest.mark.asyncio
     async def test_tool_structured_content_contains_gifts(
@@ -131,22 +130,5 @@ class TestGetRecommendationsTool:
             service=mock_recommendation_service,
         )
 
-        assert "error" in result or result.get("_meta", {}).get("error") is not None
-
-    @pytest.mark.asyncio
-    async def test_tool_meta_contains_query_context(
-        self,
-        mock_recommendation_service: MagicMock,
-    ) -> None:
-        """Test that _meta contains query context information."""
-        from src.adapters.mcp.tools.get_recommendations import get_recommendations_handler
-
-        result = await get_recommendations_handler(
-            recipient_description="My dad who loves woodworking",
-            service=mock_recommendation_service,
-        )
-
-        meta = result["_meta"]
-        assert "total_searched" in meta
-        assert "above_threshold" in meta
-        assert meta["total_searched"] == 100
+        # Error should be in structuredContent
+        assert "error" in result["structuredContent"]

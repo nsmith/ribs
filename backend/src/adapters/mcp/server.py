@@ -4,6 +4,7 @@ from typing import Annotated
 
 import structlog
 from fastmcp import FastMCP
+from mcp.types import ToolAnnotations
 
 from src.adapters.mcp.tools.get_gift_details import get_gift_details_handler
 from src.adapters.mcp.tools.get_recommendations import get_recommendations_handler
@@ -43,18 +44,38 @@ def create_mcp_server(
     )
 
     # Register the get_recommendations tool
-    @mcp.tool()
+    @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
     async def get_recommendations(
-        recipient_description: Annotated[str, "Description of the gift recipient (3-2000 chars)"],
-        past_gifts: Annotated[list[str] | None, "Previously given gifts to avoid"] = None,
-        starred_gift_ids: Annotated[list[str] | None, "IDs of starred gifts for refinement"] = None,
-        limit: Annotated[int | None, "Number of recommendations (3-10)"] = None,
+        recipient_description: Annotated[
+            str,
+            "A description of the person you're buying a gift for. Include details like their interests, hobbies, age, relationship to you, and the occasion. Example: 'My 30-year-old sister who loves gardening and cooking, for her birthday'",
+        ],
+        past_gifts: Annotated[
+            list[str] | None,
+            "List of gifts you've already given this person, so we can suggest something different. Example: ['cookbook', 'plant pot', 'kitchen knife set']",
+        ] = None,
+        starred_gift_ids: Annotated[
+            list[str] | None,
+            "IDs of gifts from previous results that you liked. Pass these to refine recommendations toward similar items. Get IDs from the 'id' field in previous results.",
+        ] = None,
+        limit: Annotated[
+            int | None,
+            "Number of recommendations to return (default: 5, min: 3, max: 10)",
+        ] = None,
     ) -> dict:
-        """Get personalized gift recommendations based on recipient description.
+        """Search for personalized gift recommendations based on who you're shopping for.
 
-        Analyzes the recipient description and returns relevant gift suggestions
-        using semantic similarity search. Optionally refine results by starring
-        gifts from previous results.
+        Returns a ranked list of gift ideas with names, descriptions, price ranges, and
+        categories. Each gift has a unique ID you can use with get_gift_details for more
+        info, or pass to starred_gift_ids to find similar items.
+
+        Each gift in the response includes:
+        - id: Unique identifier (use with get_gift_details or starred_gift_ids)
+        - name: Gift name
+        - brief_description: Short summary
+        - price_range: budget, moderate, premium, or luxury
+        - categories: Tags like 'electronics', 'handmade', 'outdoor'
+        - relevance_score: How well it matches (0.0-1.0)
         """
         return await get_recommendations_handler(
             recipient_description=recipient_description,
@@ -66,13 +87,26 @@ def create_mcp_server(
 
     # Register the get_gift_details tool (only if vector_store provided)
     if _vector_store is not None:
-        @mcp.tool()
+        @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
         async def get_gift_details(
-            gift_id: Annotated[str, "The unique ID of the gift to get details for"],
+            gift_id: Annotated[
+                str,
+                "The unique ID of a gift from get_recommendations results. Example: '12345678-1234-1234-1234-123456789012'",
+            ],
         ) -> dict:
-            """Get detailed information about a specific gift.
+            """Get full details about a specific gift idea.
 
-            Returns full description, occasions, recipient types, and purchase link.
+            Use this to learn more about a gift before recommending it. Returns the complete
+            description, suggested occasions (birthday, christmas, etc.), ideal recipient types,
+            and a purchase link when available.
+
+            The response includes:
+            - id, name, brief_description, full_description
+            - price_range: budget, moderate, premium, or luxury
+            - categories: Tags like 'electronics', 'handmade', 'outdoor'
+            - occasions: When to give it (birthday, anniversary, christmas, etc.)
+            - recipient_types: Who it's good for (tech enthusiast, home cook, etc.)
+            - purchase_url: Where to buy it (when available)
             """
             return await get_gift_details_handler(
                 gift_id=gift_id,

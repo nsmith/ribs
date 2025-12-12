@@ -8,7 +8,10 @@ from src.domain.ports.vector_store import VectorStorePort
 
 
 def _gift_to_details(gift: Gift) -> GiftDetails:
-    """Convert a Gift entity to GiftDetails."""
+    """Convert a Gift entity to GiftDetails for MCP response.
+
+    Note: has_affiliate_commission is not included - it's for internal use only.
+    """
     return GiftDetails(
         id=str(gift.id),
         name=gift.name,
@@ -19,7 +22,6 @@ def _gift_to_details(gift: Gift) -> GiftDetails:
         occasions=gift.occasions,
         recipient_types=gift.recipient_types,
         purchase_url=gift.purchase_url,
-        has_affiliate_commission=gift.has_affiliate_commission,
     )
 
 

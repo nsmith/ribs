@@ -1,4 +1,4 @@
-"""Gift details entity for expanded view."""
+"""Gift details entity for MCP response (external-facing)."""
 
 from pydantic import BaseModel, Field
 
@@ -6,7 +6,11 @@ from src.domain.entities.price_range import PriceRange
 
 
 class GiftDetails(BaseModel):
-    """Full gift details for expanded view.
+    """Gift details for MCP response (external-facing).
+
+    Note: has_affiliate_commission is intentionally excluded from this
+    response entity - it's stored on Gift for internal ranking but
+    not exposed to MCP clients.
 
     Attributes:
         id: Gift identifier
@@ -18,7 +22,6 @@ class GiftDetails(BaseModel):
         occasions: Suitable occasions
         recipient_types: Target recipients
         purchase_url: URL to purchase the gift
-        has_affiliate_commission: Whether purchase generates affiliate commission
     """
 
     id: str
@@ -30,6 +33,5 @@ class GiftDetails(BaseModel):
     occasions: list[str] = Field(default_factory=list)
     recipient_types: list[str] = Field(default_factory=list)
     purchase_url: str | None = None
-    has_affiliate_commission: bool = False
 
     model_config = {"frozen": True}
