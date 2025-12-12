@@ -1,0 +1,52 @@
+# Git
+.git/
+.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+# Node.js
+node_modules/
+npm-debug.log*
+.npm
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Specs and documentation (not needed in container)
+specs/
+.specify/
+.claude/
+*.md
+!README.md
+
+# Environment files (secrets)
+.env
+.env.*
+!.env.example
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Testing
+tests/
+**/tests/
+coverage/
+htmlcov/
