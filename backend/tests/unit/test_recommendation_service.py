@@ -19,7 +19,6 @@ class TestRecommendationServiceGetRecommendations:
         sample_gifts: list[Gift],
     ) -> None:
         """Test that get_recommendations returns gift list."""
-        # Import here to avoid circular imports during test collection
         from src.domain.services.recommendation_service import RecommendationService
 
         service = RecommendationService(
@@ -27,9 +26,7 @@ class TestRecommendationServiceGetRecommendations:
             vector_store=mock_vector_store,
         )
 
-        request = RecommendationRequest(
-            recipient_description="My dad who loves woodworking"
-        )
+        request = RecommendationRequest(keywords="woodworking dad tools")
 
         response = await service.get_recommendations(request)
 
@@ -50,22 +47,19 @@ class TestRecommendationServiceGetRecommendations:
             vector_store=mock_vector_store,
         )
 
-        request = RecommendationRequest(
-            recipient_description="Test recipient",
-            limit=3,
-        )
+        request = RecommendationRequest(keywords="test recipient", limit=3)
 
         response = await service.get_recommendations(request)
 
         assert len(response.gifts) <= 3
 
     @pytest.mark.asyncio
-    async def test_get_recommendations_embeds_description(
+    async def test_get_recommendations_embeds_keywords(
         self,
         mock_embedding_provider: EmbeddingProviderPort,
         mock_vector_store: VectorStorePort,
     ) -> None:
-        """Test that recipient description is embedded."""
+        """Test that keywords are embedded."""
         from src.domain.services.recommendation_service import RecommendationService
 
         service = RecommendationService(
@@ -73,15 +67,11 @@ class TestRecommendationServiceGetRecommendations:
             vector_store=mock_vector_store,
         )
 
-        request = RecommendationRequest(
-            recipient_description="My mom who enjoys gardening"
-        )
+        request = RecommendationRequest(keywords="gardening mom outdoor")
 
         await service.get_recommendations(request)
 
-        mock_embedding_provider.embed_text.assert_called_once_with(
-            "My mom who enjoys gardening"
-        )
+        mock_embedding_provider.embed_text.assert_called_with("gardening mom outdoor")
 
     @pytest.mark.asyncio
     async def test_get_recommendations_searches_vector_store(
@@ -97,9 +87,7 @@ class TestRecommendationServiceGetRecommendations:
             vector_store=mock_vector_store,
         )
 
-        request = RecommendationRequest(
-            recipient_description="Test recipient"
-        )
+        request = RecommendationRequest(keywords="test recipient")
 
         await service.get_recommendations(request)
 
@@ -119,9 +107,7 @@ class TestRecommendationServiceGetRecommendations:
             vector_store=mock_vector_store,
         )
 
-        request = RecommendationRequest(
-            recipient_description="Test recipient"
-        )
+        request = RecommendationRequest(keywords="test recipient")
 
         response = await service.get_recommendations(request)
 
@@ -146,11 +132,33 @@ class TestRecommendationServiceGetRecommendations:
             vector_store=mock_vector_store,
         )
 
-        request = RecommendationRequest(
-            recipient_description="Very obscure interests"
-        )
+        request = RecommendationRequest(keywords="obscure unusual")
 
         response = await service.get_recommendations(request)
 
         assert response.query_context.fallback_used is True
         mock_vector_store.get_popular.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_negative_keywords_creates_two_embeddings(
+        self,
+        mock_embedding_provider: EmbeddingProviderPort,
+        mock_vector_store: VectorStorePort,
+    ) -> None:
+        """Test that negative keywords result in two embedding calls."""
+        from src.domain.services.recommendation_service import RecommendationService
+
+        service = RecommendationService(
+            embedding_provider=mock_embedding_provider,
+            vector_store=mock_vector_store,
+        )
+
+        request = RecommendationRequest(
+            keywords="coffee lover",
+            negative_keywords="espresso machine",
+        )
+
+        await service.get_recommendations(request)
+
+        # Should embed both keywords and negative keywords
+        assert mock_embedding_provider.embed_text.call_count == 2

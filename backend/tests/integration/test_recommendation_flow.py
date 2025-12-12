@@ -19,20 +19,16 @@ class TestRecommendationFlow:
         sample_gifts: list[Gift],
     ) -> None:
         """Test complete flow: request → embed → search → response."""
-        from src.domain.services.embedding_service import EmbeddingService
         from src.domain.services.recommendation_service import RecommendationService
 
-        # Create services
-        embedding_service = EmbeddingService(provider=mock_embedding_provider)
+        # Create service
         recommendation_service = RecommendationService(
             embedding_provider=mock_embedding_provider,
             vector_store=mock_vector_store,
         )
 
-        # Create request
-        request = RecommendationRequest(
-            recipient_description="My dad who loves woodworking and classic rock music, 65 years old"
-        )
+        # Create request with keywords
+        request = RecommendationRequest(keywords="woodworking dad birthday tools")
 
         # Get recommendations
         response = await recommendation_service.get_recommendations(request)
@@ -52,12 +48,12 @@ class TestRecommendationFlow:
             assert len(gift_rec.categories) > 0
 
     @pytest.mark.asyncio
-    async def test_recommendation_with_past_gifts(
+    async def test_recommendation_with_negative_keywords(
         self,
         mock_embedding_provider: EmbeddingProviderPort,
         mock_vector_store: VectorStorePort,
     ) -> None:
-        """Test recommendations excluding past gifts."""
+        """Test recommendations with negative keywords."""
         from src.domain.services.recommendation_service import RecommendationService
 
         service = RecommendationService(
@@ -66,13 +62,13 @@ class TestRecommendationFlow:
         )
 
         request = RecommendationRequest(
-            recipient_description="My mom who enjoys gardening",
-            past_gifts=["flower seeds", "gardening gloves", "watering can"],
+            keywords="gardening mom outdoor",
+            negative_keywords="tools hardware power",
         )
 
         response = await service.get_recommendations(request)
 
-        # Past gifts should influence the results (deprioritize similar items)
+        # Negative keywords should steer away from those results
         assert response is not None
         assert response.query_context is not None
 
@@ -97,9 +93,7 @@ class TestRecommendationFlow:
             vector_store=mock_vector_store,
         )
 
-        request = RecommendationRequest(
-            recipient_description="Very unique and obscure interests"
-        )
+        request = RecommendationRequest(keywords="obscure unique unusual")
 
         response = await service.get_recommendations(request)
 
@@ -120,9 +114,7 @@ class TestRecommendationFlow:
             vector_store=mock_vector_store,
         )
 
-        request = RecommendationRequest(
-            recipient_description="Test recipient"
-        )
+        request = RecommendationRequest(keywords="test recipient")
 
         response = await service.get_recommendations(request)
 

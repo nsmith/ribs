@@ -8,45 +8,40 @@ from src.domain.entities.recommendation_request import RecommendationRequest
 class TestGetRecommendationsContract:
     """Contract tests for the get_recommendations tool schema."""
 
-    def test_valid_request_with_description_only(self) -> None:
-        """Test request with just recipient description."""
-        request = RecommendationRequest(
-            recipient_description="My dad who loves woodworking and classic rock"
-        )
-        assert request.recipient_description == "My dad who loves woodworking and classic rock"
-        assert request.past_gifts == []
-        assert request.starred_gift_ids == []
+    def test_valid_request_with_keywords_only(self) -> None:
+        """Test request with just keywords."""
+        request = RecommendationRequest(keywords="coffee lover birthday dad")
+        assert request.keywords == "coffee lover birthday dad"
+        assert request.negative_keywords is None
         assert request.limit == 5
 
     def test_valid_request_with_all_fields(self) -> None:
         """Test request with all optional fields."""
         request = RecommendationRequest(
-            recipient_description="My mom who enjoys gardening",
-            past_gifts=["flower seeds", "gardening gloves"],
-            starred_gift_ids=["abc123", "def456"],
+            keywords="gardening outdoor mom",
+            negative_keywords="tools hardware",
             limit=8,
         )
-        assert request.recipient_description == "My mom who enjoys gardening"
-        assert len(request.past_gifts) == 2
-        assert len(request.starred_gift_ids) == 2
+        assert request.keywords == "gardening outdoor mom"
+        assert request.negative_keywords == "tools hardware"
         assert request.limit == 8
 
-    def test_description_minimum_length(self) -> None:
-        """Test that description must be at least 3 characters."""
+    def test_keywords_minimum_length(self) -> None:
+        """Test that keywords must be at least 3 characters."""
         with pytest.raises(ValueError):
-            RecommendationRequest(recipient_description="ab")
+            RecommendationRequest(keywords="ab")
 
-    def test_description_maximum_length(self) -> None:
-        """Test that description is truncated or validated at 2000 chars."""
-        long_description = "a" * 2001
+    def test_keywords_maximum_length(self) -> None:
+        """Test that keywords are validated at 500 chars."""
+        long_keywords = "a" * 501
         with pytest.raises(ValueError):
-            RecommendationRequest(recipient_description=long_description)
+            RecommendationRequest(keywords=long_keywords)
 
     def test_limit_minimum(self) -> None:
         """Test that limit must be at least 3."""
         with pytest.raises(ValueError):
             RecommendationRequest(
-                recipient_description="Valid description",
+                keywords="valid keywords",
                 limit=2,
             )
 
@@ -54,27 +49,23 @@ class TestGetRecommendationsContract:
         """Test that limit cannot exceed 10."""
         with pytest.raises(ValueError):
             RecommendationRequest(
-                recipient_description="Valid description",
+                keywords="valid keywords",
                 limit=11,
             )
 
-    def test_past_gifts_truncated(self) -> None:
-        """Test that past gifts are limited to 20 items."""
-        many_gifts = [f"gift {i}" for i in range(25)]
-        request = RecommendationRequest(
-            recipient_description="Test recipient",
-            past_gifts=many_gifts,
-        )
-        assert len(request.past_gifts) == 20
+    def test_negative_keywords_optional(self) -> None:
+        """Test that negative keywords are optional."""
+        request = RecommendationRequest(keywords="tech gadgets")
+        assert request.negative_keywords is None
 
-    def test_starred_gift_ids_truncated(self) -> None:
-        """Test that starred gift IDs are limited to 20."""
-        many_ids = [f"id-{i}" for i in range(25)]
-        request = RecommendationRequest(
-            recipient_description="Test recipient",
-            starred_gift_ids=many_ids,
-        )
-        assert len(request.starred_gift_ids) == 20
+    def test_negative_keywords_maximum_length(self) -> None:
+        """Test that negative keywords are validated at 500 chars."""
+        long_negative = "a" * 501
+        with pytest.raises(ValueError):
+            RecommendationRequest(
+                keywords="valid keywords",
+                negative_keywords=long_negative,
+            )
 
 
 class TestGetRecommendationsResponse:
@@ -82,21 +73,20 @@ class TestGetRecommendationsResponse:
 
     def test_response_contains_gifts_array(self) -> None:
         """Test that response includes gifts array."""
-        # This will test the actual tool handler response
-        # Placeholder until implementation
+        # Placeholder - tested in integration tests
         pass
 
     def test_response_contains_query_context(self) -> None:
         """Test that response includes query context metadata."""
-        # Placeholder until implementation
+        # Placeholder - internal only, not in MCP response
         pass
 
     def test_response_structured_content_format(self) -> None:
         """Test OpenAI Apps SDK structured response format."""
-        # Placeholder until implementation
+        # Placeholder - tested in integration tests
         pass
 
     def test_gift_contains_required_fields(self) -> None:
         """Test each gift has id, name, brief_description, relevance_score."""
-        # Placeholder until implementation
+        # Placeholder - tested in integration tests
         pass

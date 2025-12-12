@@ -150,8 +150,17 @@ async def upload_gifts(
                 # Use existing ID if updating, otherwise generate new
                 gift_id = existing_gift.id if existing_gift else uuid4()
 
-                # Generate embedding from gift content
-                embedding_text = f"{name}. {brief_description}. Categories: {', '.join(categories)}"
+                # Generate embedding from gift content (include all searchable fields)
+                embedding_parts = [
+                    name,
+                    brief_description,
+                    f"Categories: {', '.join(categories)}",
+                ]
+                if occasions:
+                    embedding_parts.append(f"Occasions: {', '.join(occasions)}")
+                if recipient_types:
+                    embedding_parts.append(f"Good for: {', '.join(recipient_types)}")
+                embedding_text = ". ".join(embedding_parts)
                 embedding = await embedding_adapter.embed_text(embedding_text)
 
                 # Create gift entity

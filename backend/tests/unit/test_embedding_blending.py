@@ -1,185 +1,121 @@
-"""Unit tests for starred gift embedding blending in RecommendationService."""
+"""Unit tests for embedding operations in EmbeddingService."""
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock
-from uuid import UUID
 
-from src.domain.entities.gift import Gift
-from src.domain.entities.price_range import PriceRange
-from src.domain.entities.recommendation_request import RecommendationRequest
-from src.domain.ports.embedding_provider import EmbeddingProviderPort
-from src.domain.ports.vector_store import VectorStorePort
-
-# Fixed UUIDs for testing
-STARRED_UUID_1 = UUID("11111111-1111-1111-1111-111111111111")
-STARRED_UUID_2 = UUID("22222222-2222-2222-2222-222222222222")
+from src.domain.services.embedding_service import EmbeddingService
 
 
-class TestStarredGiftEmbeddingBlending:
-    """Tests for embedding blending with starred gifts."""
+class TestEmbeddingSubtraction:
+    """Tests for negative embedding subtraction."""
 
-    @pytest.fixture
-    def starred_gifts(self) -> list[Gift]:
-        """Create sample starred gifts."""
-        return [
-            Gift(
-                id=STARRED_UUID_1,
-                name="Starred Gift 1",
-                brief_description="A previously starred gift",
-                full_description="Full description",
-                price_range=PriceRange.MODERATE,
-                categories=["category1"],
-                embedding=[0.5] * 1536,
-                popularity_score=0.8,
-            ),
-            Gift(
-                id=STARRED_UUID_2,
-                name="Starred Gift 2",
-                brief_description="Another starred gift",
-                full_description="Full description",
-                price_range=PriceRange.PREMIUM,
-                categories=["category2"],
-                embedding=[0.8] * 1536,
-                popularity_score=0.7,
-            ),
-        ]
+    def test_subtract_embedding_basic(self) -> None:
+        """Test basic embedding subtraction."""
+        from unittest.mock import MagicMock
 
-    @pytest.mark.asyncio
-    async def test_starred_gifts_influence_search(
-        self,
-        mock_embedding_provider: EmbeddingProviderPort,
-        mock_vector_store: VectorStorePort,
-        starred_gifts: list[Gift],
-    ) -> None:
-        """Test that starred gift embeddings are fetched and blended."""
-        from src.domain.services.recommendation_service import RecommendationService
+        provider = MagicMock()
+        service = EmbeddingService(provider=provider)
 
-        # Setup mock to return starred gifts
-        mock_vector_store.get_by_ids = AsyncMock(return_value=starred_gifts)
+        positive = [1.0, 0.5, 0.0]
+        negative = [0.5, 0.5, 0.5]
 
-        service = RecommendationService(
-            embedding_provider=mock_embedding_provider,
-            vector_store=mock_vector_store,
-        )
+        result = service.subtract_embedding(positive, negative, negative_weight=0.5)
 
-        request = RecommendationRequest(
-            recipient_description="My dad who loves woodworking",
-            starred_gift_ids=[str(STARRED_UUID_1), str(STARRED_UUID_2)],
-        )
+        # 1.0 - 0.5*0.5 = 0.75
+        # 0.5 - 0.5*0.5 = 0.25
+        # 0.0 - 0.5*0.5 = -0.25
+        assert result[0] == pytest.approx(0.75)
+        assert result[1] == pytest.approx(0.25)
+        assert result[2] == pytest.approx(-0.25)
 
-        await service.get_recommendations(request)
+    def test_subtract_embedding_default_weight(self) -> None:
+        """Test embedding subtraction with default weight (0.3)."""
+        from unittest.mock import MagicMock
 
-        # Should fetch starred gifts by ID
-        mock_vector_store.get_by_ids.assert_called_once_with([str(STARRED_UUID_1), str(STARRED_UUID_2)])
+        provider = MagicMock()
+        service = EmbeddingService(provider=provider)
 
-    @pytest.mark.asyncio
-    async def test_blended_embedding_used_for_search(
-        self,
-        mock_embedding_provider: EmbeddingProviderPort,
-        mock_vector_store: VectorStorePort,
-        starred_gifts: list[Gift],
-    ) -> None:
-        """Test that blended embedding is used for similarity search."""
-        from src.domain.services.recommendation_service import RecommendationService
+        positive = [1.0] * 3
+        negative = [1.0] * 3
 
-        mock_vector_store.get_by_ids = AsyncMock(return_value=starred_gifts)
+        result = service.subtract_embedding(positive, negative)
 
-        service = RecommendationService(
-            embedding_provider=mock_embedding_provider,
-            vector_store=mock_vector_store,
-        )
+        # 1.0 - 0.3*1.0 = 0.7
+        assert all(v == pytest.approx(0.7) for v in result)
 
-        request = RecommendationRequest(
-            recipient_description="Test description",
-            starred_gift_ids=[str(STARRED_UUID_1), str(STARRED_UUID_2)],
-        )
+    def test_subtract_embedding_zero_weight(self) -> None:
+        """Test that zero weight returns original embedding."""
+        from unittest.mock import MagicMock
 
-        await service.get_recommendations(request)
+        provider = MagicMock()
+        service = EmbeddingService(provider=provider)
 
-        # The search should have been called (we verify it was called with some embedding)
-        mock_vector_store.search_similar.assert_called_once()
-        call_args = mock_vector_store.search_similar.call_args
-        embedding_used = call_args.kwargs.get("embedding") or call_args[1].get("embedding")
+        positive = [0.5, 0.3, 0.8]
+        negative = [1.0, 1.0, 1.0]
 
-        # The embedding should be different from the base embedding (blended)
-        # Base embedding is [0.1] * 1536, starred are [0.5] and [0.8]
-        # Blended should be somewhere between
-        assert embedding_used is not None
-        assert len(embedding_used) == 1536
+        result = service.subtract_embedding(positive, negative, negative_weight=0.0)
 
-    @pytest.mark.asyncio
-    async def test_invalid_starred_ids_ignored(
-        self,
-        mock_embedding_provider: EmbeddingProviderPort,
-        mock_vector_store: VectorStorePort,
-    ) -> None:
-        """Test that invalid starred gift IDs are silently ignored."""
-        from src.domain.services.recommendation_service import RecommendationService
+        assert result[0] == pytest.approx(0.5)
+        assert result[1] == pytest.approx(0.3)
+        assert result[2] == pytest.approx(0.8)
 
-        # Return empty list for invalid IDs
-        mock_vector_store.get_by_ids = AsyncMock(return_value=[])
+    def test_subtract_embedding_preserves_dimensions(self) -> None:
+        """Test that subtraction preserves embedding dimensions."""
+        from unittest.mock import MagicMock
 
-        service = RecommendationService(
-            embedding_provider=mock_embedding_provider,
-            vector_store=mock_vector_store,
-        )
+        provider = MagicMock()
+        service = EmbeddingService(provider=provider)
 
-        request = RecommendationRequest(
-            recipient_description="Test description",
-            starred_gift_ids=["invalid-1", "invalid-2"],
-        )
+        positive = [0.1] * 1536
+        negative = [0.2] * 1536
 
-        # Should not raise an error
-        response = await service.get_recommendations(request)
+        result = service.subtract_embedding(positive, negative)
 
-        assert response is not None
-        # Should still return results (from base embedding search)
-        assert response.gifts is not None
+        assert len(result) == 1536
 
-    @pytest.mark.asyncio
-    async def test_starred_boost_applied_flag(
-        self,
-        mock_embedding_provider: EmbeddingProviderPort,
-        mock_vector_store: VectorStorePort,
-        starred_gifts: list[Gift],
-    ) -> None:
-        """Test that starred_boost_applied flag is set when starred gifts used."""
-        from src.domain.services.recommendation_service import RecommendationService
 
-        mock_vector_store.get_by_ids = AsyncMock(return_value=starred_gifts)
+class TestEmbeddingBlending:
+    """Tests for embedding blending."""
 
-        service = RecommendationService(
-            embedding_provider=mock_embedding_provider,
-            vector_store=mock_vector_store,
-        )
+    def test_blend_single_embedding_returns_same(self) -> None:
+        """Test that blending a single embedding returns it unchanged."""
+        from unittest.mock import MagicMock
 
-        request = RecommendationRequest(
-            recipient_description="Test description",
-            starred_gift_ids=[str(STARRED_UUID_1)],
-        )
+        provider = MagicMock()
+        service = EmbeddingService(provider=provider)
 
-        response = await service.get_recommendations(request)
+        embedding = [0.5, 0.3, 0.8]
+        result = service.blend_embeddings([embedding])
 
-        assert response.query_context.starred_boost_applied is True
+        assert result == embedding
 
-    @pytest.mark.asyncio
-    async def test_no_starred_boost_when_no_starred_ids(
-        self,
-        mock_embedding_provider: EmbeddingProviderPort,
-        mock_vector_store: VectorStorePort,
-    ) -> None:
-        """Test that starred_boost_applied is False when no starred gifts."""
-        from src.domain.services.recommendation_service import RecommendationService
+    def test_blend_equal_weights(self) -> None:
+        """Test blending with equal weights."""
+        from unittest.mock import MagicMock
 
-        service = RecommendationService(
-            embedding_provider=mock_embedding_provider,
-            vector_store=mock_vector_store,
-        )
+        provider = MagicMock()
+        service = EmbeddingService(provider=provider)
 
-        request = RecommendationRequest(
-            recipient_description="Test description",
-        )
+        emb1 = [1.0, 0.0]
+        emb2 = [0.0, 1.0]
 
-        response = await service.get_recommendations(request)
+        result = service.blend_embeddings([emb1, emb2])
 
-        assert response.query_context.starred_boost_applied is False
+        # Equal weights: (1+0)/2=0.5, (0+1)/2=0.5
+        assert result[0] == pytest.approx(0.5)
+        assert result[1] == pytest.approx(0.5)
+
+    def test_blend_custom_weights(self) -> None:
+        """Test blending with custom weights."""
+        from unittest.mock import MagicMock
+
+        provider = MagicMock()
+        service = EmbeddingService(provider=provider)
+
+        emb1 = [1.0, 0.0]
+        emb2 = [0.0, 1.0]
+
+        result = service.blend_embeddings([emb1, emb2], weights=[0.75, 0.25])
+
+        # Weighted: 1*0.75+0*0.25=0.75, 0*0.75+1*0.25=0.25
+        assert result[0] == pytest.approx(0.75)
+        assert result[1] == pytest.approx(0.25)

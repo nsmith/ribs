@@ -64,3 +64,30 @@ class EmbeddingService:
                 blended[i] += embedding[i] * weight
 
         return blended
+
+    def subtract_embedding(
+        self,
+        positive: list[float],
+        negative: list[float],
+        negative_weight: float = 0.3,
+    ) -> list[float]:
+        """Subtract a negative embedding from a positive one.
+
+        This steers the search away from concepts in the negative embedding.
+        result = positive - (negative * negative_weight)
+
+        Args:
+            positive: The primary embedding to search towards.
+            negative: The embedding to steer away from.
+            negative_weight: How strongly to avoid the negative (0.0-1.0, default 0.3).
+
+        Returns:
+            An adjusted embedding vector.
+        """
+        dimension = len(positive)
+        result = [0.0] * dimension
+
+        for i in range(dimension):
+            result[i] = positive[i] - (negative[i] * negative_weight)
+
+        return result

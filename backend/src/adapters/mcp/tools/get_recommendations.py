@@ -12,19 +12,17 @@ logger = structlog.get_logger(__name__)
 
 
 async def get_recommendations_handler(
-    recipient_description: str,
+    keywords: str,
     service: RecommendationService,
-    past_gifts: list[str] | None = None,
-    starred_gift_ids: list[str] | None = None,
+    negative_keywords: str | None = None,
     limit: int | None = None,
 ) -> dict[str, Any]:
     """Handle get_recommendations MCP tool call.
 
     Args:
-        recipient_description: Description of the gift recipient.
+        keywords: Search keywords for gift matching.
         service: The recommendation service instance.
-        past_gifts: Optional list of previously given gifts.
-        starred_gift_ids: Optional list of starred gift IDs for refinement.
+        negative_keywords: Optional keywords to avoid in results.
         limit: Optional limit on number of recommendations.
 
     Returns:
@@ -32,18 +30,16 @@ async def get_recommendations_handler(
     """
     log = logger.bind(
         tool="get_recommendations",
-        description_length=len(recipient_description),
-        has_past_gifts=bool(past_gifts),
-        has_starred=bool(starred_gift_ids),
+        keywords_length=len(keywords),
+        has_negative=bool(negative_keywords),
         limit=limit,
     )
 
     try:
         # Build request with validation
         request = RecommendationRequest(
-            recipient_description=recipient_description,
-            past_gifts=past_gifts or [],
-            starred_gift_ids=starred_gift_ids or [],
+            keywords=keywords,
+            negative_keywords=negative_keywords,
             limit=limit or 5,
         )
 

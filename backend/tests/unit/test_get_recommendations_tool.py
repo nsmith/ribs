@@ -49,7 +49,7 @@ class TestGetRecommendationsTool:
         from src.adapters.mcp.tools.get_recommendations import get_recommendations_handler
 
         result = await get_recommendations_handler(
-            recipient_description="My dad who loves woodworking",
+            keywords="woodworking dad birthday",
             service=mock_recommendation_service,
         )
 
@@ -66,7 +66,7 @@ class TestGetRecommendationsTool:
         from src.adapters.mcp.tools.get_recommendations import get_recommendations_handler
 
         result = await get_recommendations_handler(
-            recipient_description="My dad who loves woodworking",
+            keywords="woodworking dad birthday",
             service=mock_recommendation_service,
         )
 
@@ -84,7 +84,7 @@ class TestGetRecommendationsTool:
         from src.adapters.mcp.tools.get_recommendations import get_recommendations_handler
 
         result = await get_recommendations_handler(
-            recipient_description="My dad who loves woodworking",
+            keywords="woodworking dad birthday",
             service=mock_recommendation_service,
         )
 
@@ -101,9 +101,8 @@ class TestGetRecommendationsTool:
         from src.adapters.mcp.tools.get_recommendations import get_recommendations_handler
 
         await get_recommendations_handler(
-            recipient_description="My mom who enjoys gardening",
-            past_gifts=["flower pot"],
-            starred_gift_ids=["gift-1"],
+            keywords="gardening mom outdoor",
+            negative_keywords="tools hardware",
             limit=5,
             service=mock_recommendation_service,
         )
@@ -112,9 +111,8 @@ class TestGetRecommendationsTool:
         call_args = mock_recommendation_service.get_recommendations.call_args
         request = call_args[0][0]
 
-        assert request.recipient_description == "My mom who enjoys gardening"
-        assert request.past_gifts == ["flower pot"]
-        assert request.starred_gift_ids == ["gift-1"]
+        assert request.keywords == "gardening mom outdoor"
+        assert request.negative_keywords == "tools hardware"
         assert request.limit == 5
 
     @pytest.mark.asyncio
@@ -126,7 +124,7 @@ class TestGetRecommendationsTool:
         from src.adapters.mcp.tools.get_recommendations import get_recommendations_handler
 
         result = await get_recommendations_handler(
-            recipient_description="ab",  # Too short (min 3 chars)
+            keywords="ab",  # Too short (min 3 chars)
             service=mock_recommendation_service,
         )
 

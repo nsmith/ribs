@@ -46,31 +46,26 @@ def create_mcp_server(
     # Register the get_recommendations tool
     @mcp.tool(annotations=ToolAnnotations(readOnlyHint=True))
     async def get_recommendations(
-        recipient_description: Annotated[
+        keywords: Annotated[
             str,
-            "A description of the person you're buying a gift for. Include details like their interests, hobbies, age, relationship to you, and the occasion. Example: 'My 30-year-old sister who loves gardening and cooking, for her birthday'",
+            "Search keywords for finding gifts. Include recipient interests, occasion, or gift type. Examples: 'coffee lover birthday', 'outdoor camping dad', 'tech gadgets christmas', 'cooking kitchen mom'",
         ],
-        past_gifts: Annotated[
-            list[str] | None,
-            "List of gifts you've already given this person, so we can suggest something different. Example: ['cookbook', 'plant pot', 'kitchen knife set']",
-        ] = None,
-        starred_gift_ids: Annotated[
-            list[str] | None,
-            "IDs of gifts from previous results that you liked. Pass these to refine recommendations toward similar items. Get IDs from the 'id' field in previous results.",
+        negative_keywords: Annotated[
+            str | None,
+            "Keywords to avoid in results. Use for past gifts or things to steer away from. Examples: 'coffee maker espresso' (if they already have coffee gear), 'electronics gadgets' (if you want non-tech gifts)",
         ] = None,
         limit: Annotated[
             int | None,
             "Number of recommendations to return (default: 5, min: 3, max: 10)",
         ] = None,
     ) -> dict:
-        """Search for personalized gift recommendations based on who you're shopping for.
+        """Search for gift recommendations using keywords.
 
-        Returns a ranked list of gift ideas with names, descriptions, price ranges, and
-        categories. Each gift has a unique ID you can use with get_gift_details for more
-        info, or pass to starred_gift_ids to find similar items.
+        Pass keywords about the recipient's interests, the occasion, or gift categories.
+        Use negative_keywords to avoid certain types of gifts (e.g., past gifts).
 
         Each gift in the response includes:
-        - id: Unique identifier (use with get_gift_details or starred_gift_ids)
+        - id: Unique identifier (use with get_gift_details to learn more)
         - name: Gift name
         - brief_description: Short summary
         - price_range: budget, moderate, premium, or luxury
@@ -78,9 +73,8 @@ def create_mcp_server(
         - relevance_score: How well it matches (0.0-1.0)
         """
         return await get_recommendations_handler(
-            recipient_description=recipient_description,
-            past_gifts=past_gifts,
-            starred_gift_ids=starred_gift_ids,
+            keywords=keywords,
+            negative_keywords=negative_keywords,
             limit=limit,
             service=_recommendation_service,
         )

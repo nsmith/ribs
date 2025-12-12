@@ -55,7 +55,20 @@ class Gift(BaseModel):
         return v
 
     def get_embedding_text(self) -> str:
-        """Get concatenated text used for embedding generation."""
-        return f"{self.name}. {self.brief_description}. Categories: {', '.join(self.categories)}"
+        """Get concatenated text used for embedding generation.
+
+        Includes all searchable fields so vector similarity works well
+        with keyword-based queries.
+        """
+        parts = [
+            self.name,
+            self.brief_description,
+            f"Categories: {', '.join(self.categories)}",
+        ]
+        if self.occasions:
+            parts.append(f"Occasions: {', '.join(self.occasions)}")
+        if self.recipient_types:
+            parts.append(f"Good for: {', '.join(self.recipient_types)}")
+        return ". ".join(parts)
 
     model_config = {"frozen": True}

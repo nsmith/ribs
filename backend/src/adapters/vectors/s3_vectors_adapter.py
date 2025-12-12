@@ -320,7 +320,6 @@ class S3VectorsAdapter(VectorStorePort):
 
         try:
             # List all vectors and filter by name
-            # For large datasets, this would need pagination
             paginator = self._client.get_paginator("list_vectors")
 
             for page in paginator.paginate(
@@ -331,23 +330,27 @@ class S3VectorsAdapter(VectorStorePort):
                 if not keys:
                     continue
 
-                # Get metadata for these vectors
-                vectors_response = self._client.get_vectors(
-                    vectorBucketName=self._bucket,
-                    indexName=self._index_name,
-                    keys=keys,
-                    returnData=True,
-                    returnMetadata=True,
-                )
+                # Batch keys in groups of 100 (S3 Vectors API limit)
+                for i in range(0, len(keys), 100):
+                    batch_keys = keys[i : i + 100]
 
-                for vector_data in vectors_response.get("vectors", []):
-                    metadata = vector_data.get("metadata", {})
-                    if metadata.get("name") == name:
-                        return self._metadata_to_gift(
-                            gift_key=vector_data["key"],
-                            metadata=metadata,
-                            embedding=vector_data.get("data", {}).get("float32", []),
-                        )
+                    # Get metadata for this batch
+                    vectors_response = self._client.get_vectors(
+                        vectorBucketName=self._bucket,
+                        indexName=self._index_name,
+                        keys=batch_keys,
+                        returnData=True,
+                        returnMetadata=True,
+                    )
+
+                    for vector_data in vectors_response.get("vectors", []):
+                        metadata = vector_data.get("metadata", {})
+                        if metadata.get("name") == name:
+                            return self._metadata_to_gift(
+                                gift_key=vector_data["key"],
+                                metadata=metadata,
+                                embedding=vector_data.get("data", {}).get("float32", []),
+                            )
 
             return None
 
